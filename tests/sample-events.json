@@ -1,0 +1,218 @@
+[
+ {
+  "expect": "s3-block-public-access cdr-sample-bucket",
+  "name": "S3 bucket made public through ACL",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"s3.amazonaws.com\", \"eventName\": \"PutBucketAcl\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"bucketName\": \"cdr-sample-bucket\", \"acl\": \"\", \"AccessControlPolicy\": {\"AccessControlList\": {\"Grant\": [{\"Grantee\": {\"URI\": \"http://acs.amazonaws.com/groups/global/AllUsers\"}, \"Permission\": \"READ\"}]}}}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "s3-block-public-access cdr-sample-bucket",
+  "name": "S3 bucket made public through policy",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"s3.amazonaws.com\", \"eventName\": \"PutBucketPolicy\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"bucketName\": \"cdr-sample-bucket\", \"bucketPolicy\": {\"Statement\": [{\"Effect\": \"Allow\", \"Principal\": \"*\", \"Action\": \"s3:GetObject\", \"Resource\": \"arn:aws:s3:::cdr-sample-bucket/*\"}]}}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "lambda-disable cdr-sample-fn",
+  "name": "Lambda function policy modified to allow public access",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"lambda.amazonaws.com\", \"eventName\": \"AddPermission20150331v2\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"functionName\": \"cdr-sample-fn\", \"statementId\": \"public\", \"action\": \"lambda:InvokeFunction\", \"principal\": \"*\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "efs-remove-public-access fs-0123456789abcdef0",
+  "name": "EFS policy modified to allow public access",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"elasticfilesystem.amazonaws.com\", \"eventName\": \"PutFileSystemPolicy\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"fileSystemId\": \"fs-0123456789abcdef0\", \"policy\": \"{\\\"Statement\\\":[{\\\"Effect\\\":\\\"Allow\\\",\\\"Principal\\\":{\\\"AWS\\\":\\\"*\\\"},\\\"Action\\\":\\\"elasticfilesystem:ClientMount\\\"}]}\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "rds-snapshot-private cdr-sample-db-snap",
+  "name": "RDS database snapshot modified to share publicly",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"rds.amazonaws.com\", \"eventName\": \"ModifyDBSnapshotAttribute\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"dBSnapshotIdentifier\": \"cdr-sample-db-snap\", \"attributeName\": \"restore\", \"valuesToAdd\": [\"all\"]}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "ami-make-private ami-0123456789abcdef0",
+  "name": "Amazon Machine Image modified to share publicly",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"ec2.amazonaws.com\", \"eventName\": \"ModifyImageAttribute\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"imageId\": \"ami-0123456789abcdef0\", \"launchPermission\": {\"add\": {\"items\": [{\"group\": \"all\"}]}}, \"attributeType\": \"launchPermission\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "iam-delete-user-policy cdr-sample-user admin-inline",
+  "name": "AWS - Administrative Inline Policy Attached to User",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"PutUserPolicy\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"userName\": \"cdr-sample-user\", \"policyName\": \"admin-inline\", \"policyDocument\": \"{\\\"Statement\\\":[{\\\"Effect\\\":\\\"Allow\\\",\\\"Action\\\":\\\"*\\\",\\\"Resource\\\":\\\"*\\\"}]}\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "iam-detach-group-policy cdr-sample-group arn:aws:iam::aws:policy/AdministratorAccess",
+  "name": "AWS - Administrative Policy Attached to Group",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"AttachGroupPolicy\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"groupName\": \"cdr-sample-group\", \"policyArn\": \"arn:aws:iam::aws:policy/AdministratorAccess\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "iam-delete-login-profile cdr-sample-user",
+  "name": "Cross-User IAM LoginProfile modification",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"CreateLoginProfile\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"userName\": \"cdr-sample-user\", \"passwordResetRequired\": false}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "iam-role-apply-deny-policy cdr-sample-role",
+  "name": "IAM role assume role policy modified to allow public access",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"UpdateAssumeRolePolicy\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"roleName\": \"cdr-sample-role\", \"policyDocument\": \"{\\\"Statement\\\":[{\\\"Effect\\\":\\\"Allow\\\",\\\"Principal\\\":{\\\"AWS\\\":\\\"*\\\"},\\\"Action\\\":\\\"sts:AssumeRole\\\"}]}\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "iam-role-apply-deny-policy web-app-role",
+  "name": "EC2 instance default credentials used to run GetCallerIdentity",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/web-app-role/i-0123456789abcdef0\", \"accessKeyId\": \"ASIAEXAMPLEINST0001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"sts.amazonaws.com\", \"eventName\": \"GetCallerIdentity\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"198.51.100.7\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": null, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "monitor-only -",
+  "name": "VPC flow logs disabled",
+  "severity": "Medium",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"ec2.amazonaws.com\", \"eventName\": \"DeleteFlowLogs\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"DeleteFlowLogsRequest\": {\"FlowLogId\": {\"tag\": 1, \"content\": \"fl-0123456789abcdef0\"}}}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "(llm) iam-disable-access-key ci-deploy AKIAEXAMPLECIUSER01",
+  "name": "Tool usage: TruffleHog",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"IAMUser\", \"arn\": \"arn:aws:iam::123456789012:user/ci-deploy\", \"userName\": \"ci-deploy\", \"accessKeyId\": \"AKIAEXAMPLECIUSER01\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"sts.amazonaws.com\", \"eventName\": \"GetCallerIdentity\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"198.51.100.99\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": null, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "(llm) iam-apply-deny-policy-user or disable key for ops-jane",
+  "name": "Write API call originated from known-malicious IP address",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"IAMUser\", \"arn\": \"arn:aws:iam::123456789012:user/ops-jane\", \"userName\": \"ops-jane\", \"accessKeyId\": \"AKIAEXAMPLEOPSJANE1\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"CreateUser\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"185.220.101.1\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"userName\": \"backdoor-admin\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "escalate-human - StopLogging org-trail",
+  "name": "CloudTrail logging disabled",
+  "severity": "Critical",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"cloudtrail.amazonaws.com\", \"eventName\": \"StopLogging\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"name\": \"org-trail\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "skip",
+  "name": "AWS - Administrative Policy Attached to Role",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/CrowdStrikeAutomatedResponse/falcon\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"AttachRolePolicy\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"roleName\": \"compromised-role\", \"policyArn\": \"arn:aws:iam::aws:policy/AWSDenyAll\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "skip",
+  "name": "Console login without MFA by IAM user",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"IAMUser\", \"arn\": \"arn:aws:iam::123456789012:user/ops-jane\", \"userName\": \"ops-jane\"}, \"eventTime\": \"2026-10-09T01:00:00Z\", \"eventSource\": \"signin.amazonaws.com\", \"eventName\": \"ConsoleLogin\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": null, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "escalate-human - DeleteDetector 12abc34d567e8fa901bc2d34e56789f0",
+  "name": "GuardDuty monitoring disabled",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"guardduty.amazonaws.com\", \"eventName\": \"DeleteDetector\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"detectorId\": \"12abc34d567e8fa901bc2d34e56789f0\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "escalate-human - SetRepositoryPolicy cdr-sample-repo",
+  "name": "ECR repository policy modified to allow public access",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"ecr.amazonaws.com\", \"eventName\": \"SetRepositoryPolicy\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"repositoryName\": \"cdr-sample-repo\", \"policyText\": \"{\\\"Statement\\\":[{\\\"Effect\\\":\\\"Allow\\\",\\\"Principal\\\":\\\"*\\\",\\\"Action\\\":\\\"ecr:*\\\"}]}\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "sns-reset-topic-policy arn:aws:sns:us-east-1:123456789012:cdr-sample-topic",
+  "name": "SNS topic policy modified to allow public access",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"sns.amazonaws.com\", \"eventName\": \"AddPermission\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"topicArn\": \"arn:aws:sns:us-east-1:123456789012:cdr-sample-topic\", \"label\": \"public\", \"aWSAccountId\": [\"*\"], \"actionName\": [\"Publish\"]}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "escalate-human - AddLayerVersionPermission20181031 cdr-sample-layer",
+  "name": "Lambda layer version policy modified to allow public access",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"lambda.amazonaws.com\", \"eventName\": \"AddLayerVersionPermission20181031\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"layerName\": \"cdr-sample-layer\", \"versionNumber\": 1, \"statementId\": \"public\", \"action\": \"lambda:GetLayerVersion\", \"principal\": \"*\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "escalate-human - PutAccountPublicAccessBlock 123456789012",
+  "name": "S3 account Block Public Access configuration modified",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"s3.amazonaws.com\", \"eventName\": \"PutAccountPublicAccessBlock\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"accountId\": \"123456789012\", \"PublicAccessBlockConfiguration\": {\"BlockPublicAcls\": false, \"IgnorePublicAcls\": false, \"BlockPublicPolicy\": false, \"RestrictPublicBuckets\": false}}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "iam-apply-deny-policy-user ops-jane",
+  "name": "AWS Unauthorized IAM User Federation Token Generation",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"IAMUser\", \"arn\": \"arn:aws:iam::123456789012:user/ops-jane\", \"userName\": \"ops-jane\", \"accessKeyId\": \"AKIAEXAMPLEOPSJANE1\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"sts.amazonaws.com\", \"eventName\": \"GetFederationToken\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"name\": \"backdoor\", \"durationSeconds\": 129600}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\", \"errorCode\": \"AccessDenied\", \"errorMessage\": \"denied\"}"
+ },
+ {
+  "expect": "escalate-human - LeaveOrganization by shared SSO role AWSReservedSSO_AdministratorAccess_abc",
+  "name": "Account attempting to leave organization",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"organizations.amazonaws.com\", \"eventName\": \"LeaveOrganization\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": null, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "escalate-human - CreateAccessKey by the root user",
+  "name": "New access key created for root user",
+  "severity": "Critical",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"Root\", \"arn\": \"arn:aws:iam::123456789012:root\", \"accessKeyId\": \"ASIAEXAMPLEROOT0001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"CreateAccessKey\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": null, \"responseElements\": {\"accessKey\": {\"accessKeyId\": \"AKIAEXAMPLEROOTKEY1\", \"status\": \"Active\"}}, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "iam-role-apply-deny-policy web-app-role",
+  "name": "AWS CreateAccessKey Failure with Instance Role Credentials",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/web-app-role/i-0123456789abcdef0\", \"accessKeyId\": \"ASIAEXAMPLEINST0001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"CreateAccessKey\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"userName\": \"admin\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\", \"errorCode\": \"AccessDenied\", \"errorMessage\": \"denied\"}"
+ },
+ {
+  "expect": "skip",
+  "name": "AWS - Administrative Policy Attached to User",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"IAMUser\", \"arn\": \"arn:aws:iam::123456789012:user/ops-jane\", \"userName\": \"ops-jane\", \"accessKeyId\": \"AKIAEXAMPLEOPSJANE1\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"AttachUserPolicy\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"userName\": \"ops-jane\", \"policyArn\": \"arn:aws:iam::aws:policy/AdministratorAccess\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\", \"errorCode\": \"AccessDenied\", \"errorMessage\": \"denied\"}"
+ },
+ {
+  "expect": "sns-reset-topic-policy arn:aws:sns:us-east-1:123456789012:cdr-sample-topic",
+  "name": "SNS topic policy modified to allow public access (policy)",
+  "severity": "High",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"sns.amazonaws.com\", \"eventName\": \"SetTopicAttributes\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"topicArn\": \"arn:aws:sns:us-east-1:123456789012:cdr-sample-topic\", \"attributeName\": \"Policy\", \"attributeValue\": \"{\\\"Statement\\\":[{\\\"Effect\\\":\\\"Allow\\\",\\\"Principal\\\":\\\"*\\\",\\\"Action\\\":\\\"SNS:Publish\\\",\\\"Resource\\\":\\\"arn:aws:sns:us-east-1:123456789012:cdr-sample-topic\\\"}]}\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "guardduty-enable-detector 12abc34d567e8fa901bc2d34e56789f0",
+  "name": "GuardDuty detector suspended",
+  "severity": "Medium",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"guardduty.amazonaws.com\", \"eventName\": \"UpdateDetector\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"detectorId\": \"12abc34d567e8fa901bc2d34e56789f0\", \"enable\": false}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "guardduty-delete-ipset 12abc34d567e8fa901bc2d34e56789f0 0123456789abcdef0123456789abcdef",
+  "name": "GuardDuty trust list updated with new IP set",
+  "severity": "Medium",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"guardduty.amazonaws.com\", \"eventName\": \"CreateIPSet\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"detectorId\": \"12abc34d567e8fa901bc2d34e56789f0\", \"name\": \"office\", \"format\": \"TXT\", \"location\": \"https://s3.amazonaws.com/b/ips.txt\", \"activate\": true}, \"responseElements\": {\"ipSetId\": \"0123456789abcdef0123456789abcdef\"}, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "escalate-human - UpdateDetector 12abc34d567e8fa901bc2d34e56789f0",
+  "name": "GuardDuty detector suspended (region without a GuardDuty config)",
+  "severity": "Medium",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"guardduty.amazonaws.com\", \"eventName\": \"UpdateDetector\", \"awsRegion\": \"us-west-2\", \"sourceIPAddress\": \"203.0.113.10\", \"userAgent\": \"aws-cli/2.0\", \"requestParameters\": {\"detectorId\": \"12abc34d567e8fa901bc2d34e56789f0\", \"enable\": false}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "iam-apply-deny-policy-user ops-jane",
+  "name": "API call made from hacking-related operating system",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"IAMUser\", \"arn\": \"arn:aws:iam::123456789012:user/ops-jane\", \"userName\": \"ops-jane\", \"accessKeyId\": \"AKIAEXAMPLEJANE0001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"s3.amazonaws.com\", \"eventName\": \"ListBuckets\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"198.51.100.23\", \"userAgent\": \"aws-cli/2.15.0 Python/3.11 Linux/6.5.0-kali3-amd64 exe/x86_64.kali.2024\", \"requestParameters\": null, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "iam-role-apply-deny-policy ci-deploy-role",
+  "name": "Tool usage: ScoutSuite",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/ci-deploy-role/build-42\", \"accessKeyId\": \"ASIAEXAMPLECI000001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"GetAccountAuthorizationDetails\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"198.51.100.23\", \"userAgent\": \"Scout Suite/5.14.0 Boto3/1.34\", \"requestParameters\": null, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "escalate-human - ListObjects by shared SSO role AWSReservedSSO_AdministratorAccess_abc",
+  "name": "Tool usage: CloudBerry Explorer",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"s3.amazonaws.com\", \"eventName\": \"ListObjects\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"198.51.100.23\", \"userAgent\": \"CloudBerryLab.Base.HttpUtil.Client 7.9\", \"requestParameters\": {\"bucketName\": \"cdr-sample-bucket\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "(llm) monitor-only, or deny ops-jane",
+  "name": "Potential discovery of Admin accounts",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"IAMUser\", \"arn\": \"arn:aws:iam::123456789012:user/ops-jane\", \"userName\": \"ops-jane\", \"accessKeyId\": \"AKIAEXAMPLEJANE0001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"iam.amazonaws.com\", \"eventName\": \"ListEntitiesForPolicy\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"198.51.100.23\", \"userAgent\": \"aws-cli/2.15.0\", \"requestParameters\": {\"policyArn\": \"arn:aws:iam::aws:policy/AdministratorAccess\"}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ },
+ {
+  "expect": "monitor-only -",
+  "name": "AWS - EC2 Instance Associated with Admin Role",
+  "severity": "Informational",
+  "raw_event": "{\"eventVersion\": \"1.10\", \"userIdentity\": {\"type\": \"AssumedRole\", \"arn\": \"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_abc/dev@example.com\", \"accessKeyId\": \"ASIAEXAMPLESSO00001\"}, \"eventTime\": \"2026-10-27T01:00:00Z\", \"eventSource\": \"ec2.amazonaws.com\", \"eventName\": \"AssociateIamInstanceProfile\", \"awsRegion\": \"us-east-1\", \"sourceIPAddress\": \"198.51.100.23\", \"userAgent\": \"aws-cli/2.15.0\", \"requestParameters\": {\"instanceId\": \"i-0123456789abcdef0\", \"iamInstanceProfile\": {\"name\": \"admin-profile\"}}, \"responseElements\": null, \"eventType\": \"AwsApiCall\", \"recipientAccountId\": \"123456789012\"}"
+ }
+]

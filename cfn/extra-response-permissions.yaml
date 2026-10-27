@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Extra permissions for the CrowdStrike automated-response role, for the CDR triage workflow's
+  CloudTrail and GuardDuty response actions. CrowdStrike's template (cs_aws_automated_response)
+  doesn't grant them. Adds an inline policy to the existing role, so CrowdStrike template
+  upgrades leave it alone. Deploy per account, or as a StackSet next to CrowdStrike's.
+
+Parameters:
+  RoleName:
+    Type: String
+    Default: CrowdStrikeAutomatedResponse
+    Description: Name of the role created by the CrowdStrike Automated Response template
+
+Resources:
+  ExtraResponseActions:
+    Type: AWS::IAM::RolePolicy
+    Properties:
+      RoleName: !Ref RoleName
+      PolicyName: CdrSoarExtraResponseActions
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: CloudTrailRestartLogging
+            Effect: Allow
+            Action:
+              - cloudtrail:StartLogging
+              - cloudtrail:GetTrailStatus
+              - cloudtrail:DescribeTrails
+              - cloudtrail:GetTrail
+            Resource: '*'
+          - Sid: GuardDutyReenableAndRemoveTrustedIps
+            Effect: Allow
+            Action:
+              - guardduty:UpdateDetector
+              - guardduty:GetDetector
+              - guardduty:ListDetectors
+              - guardduty:DeleteIPSet
+              - guardduty:GetIPSet
+              - guardduty:ListIPSets
+            Resource: '*'
