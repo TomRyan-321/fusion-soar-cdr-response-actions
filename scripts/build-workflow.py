@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Generate workflows/*.yaml from scripts/workflow/*.py and the action table below.
 
-Edit this file (or the two Python step scripts), run it, then deploy. The main workflow triages
-the detection and opens the case; it hands the chosen action to one of four on-demand child
+Edit this file (the action table, the catalog the LLM picks from, and the prompt) or the two Python
+step scripts, run it, then deploy. The main workflow has Charlotte AI pick a response, checks it
+against the CloudTrail event and opens the case; it hands the chosen action to one of four on-demand child
 workflows (IAM, EC2, data stores, logging and detection), which run it and comment on the case. Every response action
 gets one condition, one AWS step and one case comment in its child workflow.
 
@@ -11,7 +12,9 @@ response action inline, for tenants that want one workflow. Deploy one version o
 
 Usage: scripts/build-workflow.py
 """
+import json
 import os
+
 import yaml
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -75,7 +78,7 @@ ACTIONS = {
     "sns-reset-topic-policy": ("SnsResetTopicPolicy", "608d0bc8e44048e4a8c17c3f4a636fcc", "SNS",
         {"params.path.account_id": ACCOUNT, "params.path.region": I % "region", "params.query.TopicArn": I % "target",
          "params.query.AttributeName": "Policy", "params.query.AttributeValue": SNS_POLICY, "params.query.Version": "2010-03-31"}, None),
-    # No account or region input: they act in their config's account and region (see BOUND in route.py).
+    # No account or region input: they act in their config's account and region (see BOUND in parse_llm.py).
     "cloudtrail-start-logging": ("CloudTrailStartLogging", "50e74f864c43403095deb7bbf4b945ab_a9529ebba5a041debcd38f73c4dc8d85",
         "CLOUDTRAIL", {"Name": I % "target"}, None),
     "guardduty-enable-detector": ("GuardDutyEnableDetector", "304b89c6ae6742b5a8809fdaaa929617", "GUARDDUTY",
@@ -84,18 +87,78 @@ ACTIONS = {
         {"params.path.detectorId": I % "target", "params.path.ipSetId": I % "detail"}, None),
 }
 
-PROMPT = """Pick ONE response for this CrowdStrike cloud detection in AWS. An analyst approves it before it runs.
-iam-disable-access-key [user owning the abused access key; also give access_key_id]
-iam-apply-deny-policy-user [IAM user acting maliciously]
-iam-role-apply-deny-policy [IAM role acting maliciously or being abused]
-monitor-only [low risk, or nothing to contain]
-escalate-human [unclear target, or needs investigation first]
-Copy the target exactly from the event.
+# What the LLM may pick, and how parse_llm.py checks it. Adding a response action means one entry
+# here and one in ACTIONS; a new detection type needs no change.
+#   runs:   auto (an exact undo: runs without approval when confident), approval, or none (case only; skip: no case)
+#   target, detail, port: the event field whose value each must be. "@role" is the role in the caller's
+#           assumed-role ARN. An undo's fields must come from requestParameters or responseElements
+#           (what the call changed); a containment's may come from anywhere in the event, including the caller.
+#   bound:  the action acts in its config's account (IAM) or account and region; elsewhere use this instead
+UNDO, CONTAIN = "undo", "contain"
+CATALOG = {
+    "sg-revoke-ingress": dict(runs="auto", kind=UNDO, target="groupId", port="fromPort",
+        what="remove a security group ingress rule open to 0.0.0.0/0 or ::/0"),
+    "remove-public-snapshot": dict(runs="auto", kind=UNDO, target="snapshotId", what="make an EBS snapshot shared with all accounts private"),
+    "ami-make-private": dict(runs="auto", kind=UNDO, target="imageId", what="remove public launch permission from an AMI"),
+    "rds-snapshot-private": dict(runs="auto", kind=UNDO, target="dBSnapshotIdentifier",
+        what="remove public restore permission from an RDS snapshot"),
+    "s3-block-public-access": dict(runs="auto", kind=UNDO, target="bucketName",
+        what="turn on Block Public Access for one bucket made public by its ACL or policy, or whose block was removed"),
+    "efs-remove-public-access": dict(runs="auto", kind=UNDO, target="fileSystemId", what="remove public statements from an EFS file system policy"),
+    "sns-reset-topic-policy": dict(runs="approval", kind=UNDO, target="topicArn",
+        what="replace an SNS topic policy opened to others with the owner-only default"),
+    "lambda-disable": dict(runs="approval", kind=UNDO, target="functionName",
+        what="set reserved concurrency 0 on a Lambda function made publicly invocable"),
+    "cloudtrail-start-logging": dict(runs="auto", kind=UNDO, target="name", bound=("CLOUDTRAIL", "escalate-human"),
+        what="start logging again on a CloudTrail trail that was stopped (StopLogging)"),
+    "guardduty-enable-detector": dict(runs="auto", kind=UNDO, target="detectorId", bound=("GUARDDUTY", "escalate-human"),
+        what="re-enable a GuardDuty detector that was disabled, not deleted"),
+    "guardduty-delete-ipset": dict(runs="auto", kind=UNDO, target="detectorId", detail="ipSetId", bound=("GUARDDUTY", "escalate-human"),
+        what="delete a newly created GuardDuty trusted IP set"),
+    **{f"iam-detach-{k}-policy": dict(runs="auto", kind=UNDO, target=f"{k}Name", detail="policyArn",
+        bound=("IAM", {"user": "iam-apply-deny-policy-user", "role": "iam-role-apply-deny-policy", "group": "escalate-human"}[k]),
+        what=f"detach a managed policy that was attached to an IAM {k}") for k in ("user", "role", "group")},
+    **{f"iam-delete-{k}-policy": dict(runs="approval", kind=UNDO, target=f"{k}Name", detail="policyName",
+        bound=("IAM", {"user": "iam-apply-deny-policy-user", "role": "iam-role-apply-deny-policy", "group": "escalate-human"}[k]),
+        what=f"delete an inline policy that was put on an IAM {k}") for k in ("user", "role", "group")},
+    "iam-delete-login-profile": dict(runs="approval", kind=UNDO, target="userName", bound=("IAM", "iam-apply-deny-policy-user"),
+        what="remove a console password that was created or changed for an IAM user"),
+    "iam-disable-access-key": dict(runs="approval", kind=CONTAIN, target="userName", detail="accessKeyId",
+        what="deactivate an IAM user's access key that was created or abused (target: the key's user)"),
+    "iam-apply-deny-policy-user": dict(runs="approval", kind=CONTAIN, target="userName", what="attach AWSDenyAll to an IAM user"),
+    "iam-role-apply-deny-policy": dict(runs="approval", kind=CONTAIN, target=["roleName", "@role"],
+        what="attach AWSDenyAll to an IAM role: a malicious caller's role, or a role whose trust policy was opened to others"),
+    "monitor-only": dict(runs="none", what="open a case for the record: nothing to undo or contain"),
+    "escalate-human": dict(runs="none", detail="",
+        what="open a case for a person: needed, but no action above fits, or the target is unclear (detail: what to look at)"),
+    "skip": dict(runs="none", what="no case: expected, low-risk activity (Informational or Low severity only)"),
+}
 
-Detection: ${Trigger.Detection.Name}
+
+def describe(name, spec):
+    fields = [f"{f}: {' or '.join(map(str, [spec[f]] if isinstance(spec[f], str) else spec[f])).replace('@role', 'the role in the caller ARN')}"
+              for f in ("target", "detail", "port") if spec.get(f)]
+    return f"{name}: {spec['what']}" + (f" [{'; '.join(fields)}]" if fields else "")
+
+
+PROMPT = """You respond to a CrowdStrike cloud detection in AWS. Pick ONE action from the list.
+1. Undo first: if the call exposed a resource, granted access or weakened a control, and an action undoes exactly that change on that resource, pick it, whoever the caller is.
+2. A call with an errorCode changed nothing: don't undo it.
+3. When the detection is about the caller rather than the change (attack tools or a hacking OS in the userAgent, a malicious IP, instance credentials (session i-...) used outside their instance, or a call that is never routine), contain the caller, even if the call only read data.
+4. Don't stretch an action to another resource type, an account-level setting or a deleted resource: escalate-human.
+5. Prefer monitor-only over an action that could break a deliberate setup (an admin role on an instance), and when nothing is exposed or contained (versioning or logging settings).
+Copy target, detail and port exactly from the event field named in [brackets].
+
+Actions:
+""" + "\n".join(describe(name, spec) for name, spec in CATALOG.items()) + """
+
+Detection: ${Trigger.Detection.Name} (${Trigger.Detection.SeverityDisplayName})
+${Trigger.Detection.Description}
 Event: ${WorkflowCustomVariable.Event}
 
-Reply with only JSON: {"action":"","target":"","access_key_id":"","confidence":"high|medium|low","why":"<=15 words"}"""
+Reply with only JSON: {"action":"","target":"","detail":"","port":0,"confidence":<0-100: how sure you are of action and target>,"why":"<=15 words"}"""
+MODEL = "GPT Latest"
+AUTO_MIN = 90  # an auto action runs without approval only at this confidence or above
 
 SEVERITY = ("${{'Critical': '90', 'High': '70', 'Medium': '50', 'Low': '30', 'Informational': '10'}"
             "[data['Trigger.Detection.SeverityDisplayName']]}")
@@ -107,8 +170,7 @@ def script(name):
 
 
 def split(node, i, cast=""):
-    expr = f"data['{node}.output_stdout'].split('#EVENT#')[0].split('|')[{i}]" if node == "Route" else \
-        f"data['{node}.output_stdout'].split('|')[{i}]"
+    expr = f"data['{node}.output_stdout'].split('#EVENT#')[0].split('|')[{i}]"
     return f"${{{cast}({expr})}}" if cast else f"${{{expr}}}"
 
 
@@ -118,7 +180,7 @@ def update(name, values, nxt):
 
 
 def python(name, body, nxt):
-    return {"id": "7fb9eb10b23943efaf1e6082b0ac0338", "name": name, "version_constraint": "~1", "next": nxt,
+    return {"id": "7fb9eb10b23943efaf1e6082b0ac0338", "class": "Inline.Python", "name": name, "version_constraint": "~1", "next": nxt,
             "properties": {"runtime": "py0313general", "script": body}}
 
 
@@ -127,6 +189,10 @@ def comment(text, case="${data['CreateCase.id']}"):
             "properties": {"case_id": case, "comment": text}}
 
 
+# The checker gets the catalog and the auto-run threshold.
+checker = script("parse_llm.py").replace("__CATALOG__", json.dumps(
+    {name: {k: v for k, v in spec.items() if k != "what"} for name, spec in CATALOG.items()}, separators=(",", ":"))
+).replace("__AUTO_MIN__", str(AUTO_MIN))
 group_conditions = [f"is_{g.lower()}_response" for g in GROUPS]
 actions = {
     "CreateVariable": {"id": "702d15788dbbffdf0b68d8e2f3599aa4", "class": "CreateVariable", "name": "Create variable",
@@ -135,20 +201,16 @@ actions = {
                                                               "Event", "Confidence", "Why")},
                            "Port": {"type": "integer"}}}}},
     "Route": python("Route detection", script("route.py"), ["SetRoute"]),
-    "SetRoute": update("Set route", {"Route": split("Route", 0), "Action": split("Route", 1), "Target": split("Route", 2),
-                                     "Detail": split("Route", 3), "Port": split("Route", 4, "int"), "Region": split("Route", 5),
-                                     "AutoRun": split("Route", 6), "Check": split("Route", 7), "Confidence": "high",
-                                     "Why": "Fixed response for this API call",
-                                     "Event": "${data['Route.output_stdout'].split('#EVENT#')[1]}"},
-                       ["is_table", "is_llm"]),
+    "SetRoute": update("Set route", {"Route": split("Route", 0), "Region": split("Route", 1), "Check": split("Route", 2),
+                                     "Event": "${data['Route.output_stdout'].split('#EVENT#')[1]}"}, ["is_llm"]),
     "RecommendAction": {"id": "bdfecafafdb44919a458fcf51d6b93a7_98dec86072334d24b37dd798098cfd63", "name": "Charlotte AI - LLM Completion",
                         "version_constraint": "~0", "next": ["ParseRecommendation"],
-                        "properties": {"model_name": "Claude Latest", "temperature": 0, "user_prompt": PROMPT}},
-    "ParseRecommendation": python("Parse and check recommendation", script("parse_llm.py"), ["SetRecommendation"]),
-    "SetRecommendation": update("Set recommendation", {"Action": split("ParseRecommendation", 0), "Target": split("ParseRecommendation", 1),
-                                                       "Detail": split("ParseRecommendation", 2), "Confidence": split("ParseRecommendation", 3),
-                                                       "Why": split("ParseRecommendation", 4), "Check": split("ParseRecommendation", 5),
-                                                       "AutoRun": "no"}, ["CreateCase"]),
+                        "properties": {"model_name": MODEL, "temperature": 0, "user_prompt": PROMPT}},
+    "ParseRecommendation": python("Parse and check recommendation", checker, ["SetRecommendation"]),
+    "SetRecommendation": update("Set recommendation", {
+        "Action": split("ParseRecommendation", 0), "Target": split("ParseRecommendation", 1), "Detail": split("ParseRecommendation", 2),
+        "Port": split("ParseRecommendation", 3, "int"), "Confidence": split("ParseRecommendation", 4), "Why": split("ParseRecommendation", 5),
+        "Check": split("ParseRecommendation", 6), "AutoRun": split("ParseRecommendation", 7)}, ["is_case"]),
     "CreateCase": {"id": "4918bf9d85ecc06388eca16543bdbbdc", "name": "Create a new Case", "version_constraint": "~1",
                    "next": ["is_auto", "is_needs_approval"],
                    "properties": {"name": "CDR ${Trigger.Detection.Name}: ${WorkflowCustomVariable.Action} ${WorkflowCustomVariable.Target}",
@@ -157,7 +219,7 @@ actions = {
                                       "## Response\n\n"
                                       "**Action:** ${WorkflowCustomVariable.Action}\n\n"
                                       "**Target:** ${WorkflowCustomVariable.Target} ${WorkflowCustomVariable.Detail}\n\n"
-                                      "**Decided by:** ${WorkflowCustomVariable.Route} (confidence ${WorkflowCustomVariable.Confidence}). "
+                                      f"**Decided by:** Charlotte AI ({MODEL}), confidence ${{WorkflowCustomVariable.Confidence}}/100. "
                                       "${WorkflowCustomVariable.Why}\n\n"
                                       "**Check:** ${WorkflowCustomVariable.Check}\n\n"
                                       "**Runs:** ${data['WorkflowCustomVariable.AutoRun'] == 'yes' ? 'automatically' : 'after approval by __APPROVER_EMAIL__ (containment actions only)'}\n\n"
@@ -172,7 +234,7 @@ actions = {
                                                "${Trigger.Detection.FCS.CloudAccountId}.\n\n"
                                                "Action: ${WorkflowCustomVariable.Action}\nTarget: ${WorkflowCustomVariable.Target} "
                                                "${WorkflowCustomVariable.Detail}\nRegion: ${WorkflowCustomVariable.Region}\n"
-                                               "Decided by: ${WorkflowCustomVariable.Route} (${WorkflowCustomVariable.Confidence}). "
+                                               f"Decided by: Charlotte AI ({MODEL}), confidence ${{WorkflowCustomVariable.Confidence}}/100. "
                                                "${WorkflowCustomVariable.Why}\nCheck: ${WorkflowCustomVariable.Check}\n\n"
                                                "Approve to run it now. Details are on case ${data['CreateCase.id']}.")}},
     "CommentNotApproved": comment("Recommended ${WorkflowCustomVariable.Action} was not run: declined by "
@@ -181,8 +243,8 @@ actions = {
 conditions = {
     "is_aws_cloud_ioa": {"next": ["CreateVariable"], "expression": "Trigger.Detection.FCS.DetectType:'cloud-ioa'+Trigger.Detection.FCS.ServiceProvider:'aws'",
                          "display": ["AWS cloud IOA detection"]},
-    "is_table": {"next": ["CreateCase"], "expression": "WorkflowCustomVariable.Route:'table'", "display": ["Fixed response for this API call"]},
-    "is_llm": {"next": ["RecommendAction"], "expression": "WorkflowCustomVariable.Route:'llm'", "display": ["Needs a judgment call"]},
+    "is_llm": {"next": ["RecommendAction"], "expression": "WorkflowCustomVariable.Route:'llm'", "display": ["Not made by the response role"]},
+    "is_case": {"next": ["CreateCase"], "expression": "WorkflowCustomVariable.Action:!'skip'", "display": ["Worth a case"]},
     "is_auto": {"next": group_conditions, "expression": "WorkflowCustomVariable.AutoRun:'yes'", "display": ["Safe to run automatically"]},
     "is_needs_approval": {"next": ["RequestApproval"],
                           "expression": "WorkflowCustomVariable.AutoRun:'no'+WorkflowCustomVariable.Action:!'monitor-only'+WorkflowCustomVariable.Action:!'escalate-human'",
@@ -235,10 +297,10 @@ def response_nodes(members, field):
     return nodes, conds
 
 
-DESCRIPTION = ("On an AWS Falcon Cloud Security (CDR) cloud IOA detection, pick a response: a fixed response for API calls "
-               "with one obvious fix (target read straight from the CloudTrail event), otherwise a Charlotte AI LLM judgment "
-               "whose target must appear in the event. Open a case. Exact undos of exposure and policy changes run "
-               "automatically; other containment runs after email approval. Results are commented on the case.")
+DESCRIPTION = ("On an AWS Falcon Cloud Security (CDR) cloud IOA detection, Charlotte AI picks a response from the action "
+               "catalog with a confidence score; a Python check confirms its target is the right field of the CloudTrail event. "
+               "Open a case. Exact undos of exposure and policy changes run automatically at high confidence; other "
+               "actions run after email approval. Results are commented on the case.")
 TRIGGER = {"next": ["is_aws_cloud_ioa"], "event": "Investigatable", "name": "Detection > FCS Detection", "type": "Signal",
            "version_constraint": "~1"}
 
