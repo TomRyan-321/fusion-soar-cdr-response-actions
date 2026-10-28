@@ -11,7 +11,7 @@ Looks up the tenant's AWS IAM, EC2, S3, Lambda, EFS, RDS, SNS, CloudTrail and Gu
 Store app configurations, fills in a lookup from account ID to config ID and the approver's
 email, then imports and enables each workflow. A config with Account ID {account_id} covers
 any account without its own config. That doesn't work for the generic AWS IAM actions or for
-CloudTrail and GuardDuty, so it also tells the routing step which accounts (IAM) and
+CloudTrail and GuardDuty, so it also tells the check step which accounts (IAM) and
 account:region pairs (CloudTrail, GuardDuty) have their own config; elsewhere those responses
 fall back to a deny or an escalation. Detections from an account with no matching config fail
 at the response action.
@@ -42,7 +42,7 @@ APPS = {"__IAM_CONFIG_ID__": ("AWS IAM", "fecfb32861a14223ad131dd34210573a"),
         "__CLOUDTRAIL_CONFIG_ID__": ("AWS CloudTrail", "b101a6a0b042414a938aef201c2798c1"),
         "__GUARDDUTY_CONFIG_ID__": ("AWS GuardDuty", "fd069ff8dc6c4ea6a6137243e5bac6f7")}
 # Apps whose actions can't take the account (IAM) or the account and region (CloudTrail,
-# GuardDuty) as input. route.py only uses them where a config of their own exists.
+# GuardDuty) as input. parse_llm.py only uses them where a config of their own exists.
 BOUND_APPS = {"IAM": "__IAM_CONFIG_ID__", "CLOUDTRAIL": "__CLOUDTRAIL_CONFIG_ID__", "GUARDDUTY": "__GUARDDUTY_CONFIG_ID__"}
 
 # Children first: the main workflow needs their definition IDs.
