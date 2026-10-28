@@ -31,8 +31,8 @@ def path(d, color=DEEP):
 
 out.append(f'<rect width="{W}" height="{H}" fill="#FFFFFF"/>')
 out.append(f'<text x="40" y="52" font-size="26" font-weight="700" fill="{BLACK}">CDR triage and respond</text>')
-out.append(f'<text x="40" y="78" font-size="14" fill="{DEEP}">Falcon Fusion SOAR response to AWS cloud IOA detections: fixed responses where the fix is obvious, '
-           f'Charlotte AI for judgment calls, approval for anything disruptive.</text>')
+out.append(f'<text x="40" y="78" font-size="14" fill="{DEEP}">Falcon Fusion SOAR response to AWS cloud IOA detections: Charlotte AI picks every response '
+           f'with a confidence score, code checks it against the event, approval for anything disruptive.</text>')
 out.append(f'<rect x="40" y="90" width="120" height="4" fill="{RED}"/>')
 
 # Detection source
@@ -45,19 +45,17 @@ path("M 260 338 C 295 338, 300 221, 328 221")
 out.append(f'<rect x="300" y="120" width="760" height="610" rx="10" fill="{CLOUD}" stroke="{RED}" stroke-width="2"/>')
 out.append(f'<text x="320" y="146" font-size="13" font-weight="700" fill="{RED}">FUSION SOAR WORKFLOW</text>')
 
-box(330, 165, 300, 112, "Route (Python step)", ["Maps 47 CloudTrail API calls, plus root,", "instance-role and attack-tool activity,", "to a fixed response with the exact", "target. 0 tokens."], stripe=RED)
-box(660, 172, 370, 98, "Stop, no case", ["Informational with no fixed response,", "or made by the CrowdStrike response role", "(so containment is never undone)"], fill="#FFFFFF", title_color=DEEP)
+box(330, 165, 300, 112, "Route (Python step)", ["Trims the CloudTrail event. Nothing", "here depends on the detection type,", "so new CDR rules need no change."], stripe=RED)
+box(660, 172, 370, 98, "Stop, no case", ["Made by the CrowdStrike response role", "(so containment is never undone), or the", "LLM picked skip (Informational or Low only)"], fill="#FFFFFF", title_color=DEEP)
 arrow(630, 221, 658, 221)
 
-box(330, 330, 300, 130, "Charlotte AI LLM Completion", ["Judgment calls only (malicious IP, tools,", "anomalies). ~300 in / 65 out tokens.", "Target must appear in the event;", "never denies an AWSReservedSSO_* role."], stripe=DARK_RED)
-arrow(480, 277, 480, 328, "no fixed response", 488, 307)
+box(330, 330, 300, 150, "Charlotte AI, then check (Python)", ["Picks action, target and confidence 0-100", "from the action catalog. ~1,100 in / 55 out.", "Check: target is the catalog's event field,", "the call succeeded, never SSO or root.", "Fails a check → escalate-human."], stripe=DARK_RED)
+arrow(480, 277, 480, 328, "every detection", 488, 307)
 
 box(680, 330, 350, 130, "Falcon case", ["Action, target, how it was decided,", "the target check and the trimmed event.", "Severity from the detection.", "monitor-only / escalate-human stop here."], stripe=RED)
 arrow(630, 395, 678, 395)
-path("M 630 255 C 660 255, 650 330, 700 328")
-out.append(f'<text x="664" y="300" font-size="12" font-style="italic" fill="{DEEP}">fixed response</text>')
 
-box(330, 510, 330, 190, "Runs automatically", ["Exact undo of the change:", "• revoke internet ingress on the port", "• make snapshot / AMI / RDS snapshot private",
+box(330, 510, 330, 190, "Runs automatically (confidence ≥ 90)", ["Exact undo of the change:", "• revoke internet ingress on the port", "• make snapshot / AMI / RDS snapshot private",
                                                  "• turn on S3 Block Public Access", "• remove the public EFS policy", "• detach the admin policy (user, role, group)",
                                                  "• restart a trail; re-enable GuardDuty", "• delete a new GuardDuty trusted IP set"], stripe=RED)
 box(690, 510, 340, 190, "Approval email, then run", ["Approve runs it; Decline comments the case:", "• delete an inline admin policy", "• disable an access key",
@@ -79,16 +77,16 @@ box(1100, 480, 260, 170, "Every AWS account", ["CrowdStrikeAutomatedResponse rol
 
 # Tooling band
 out.append(f'<text x="40" y="778" font-size="13" font-weight="700" fill="{RED}">REPO TOOLING</text>')
-box(40, 792, 300, 96, "scripts/build-workflow.py", ["Action table + LLM prompt; embeds", "workflow/route.py and parse_llm.py"])
+box(40, 792, 300, 96, "scripts/build-workflow.py", ["Action table, catalog and prompt; embeds", "workflow/route.py and parse_llm.py"])
 arrow(340, 840, 378, 840)
 box(380, 792, 300, 96, "workflows/*.yaml", ["Generated: main workflow (13 actions)", "+ 4 child workflows (42 actions), or", "one self-contained workflow (51)"])
 arrow(680, 840, 718, 840)
 box(720, 792, 300, 96, "scripts/deploy.py", ["Fills Store config lookup, approver", "and child IDs; imports + enables all 5"])
 path("M 870 792 C 870 760, 700 760, 700 732")
-box(40, 910, 470, 96, "scripts/replay-detections.py + tests/sample-events.json", ["Dry run of routing and LLM steps on real and sample", "events. Prints route, action, target, tokens. No AWS action."])
+box(40, 910, 470, 96, "scripts/replay-detections.py + tests/*-events.json", ["Dry run on real and 58 sample events, scored per model", "and confidence band, with consistency checks. No AWS action."])
 box(540, 910, 480, 96, "scripts/simulate-detections.sh run | cleanup", ["Real detections from throwaway cdr-sim-* resources in a", "sandbox account. Public-exposure scenarios are opt-in."])
-box(1100, 792, 260, 214, "Measured", ["Routed detections: 0 tokens", "LLM detections: ~300 in / 65 out", "(was ~1,290 / 200 on every one)", "",
-                                      "Live tests: 13 CDR rules from real", "detections, results checked in AWS"], stripe=DARK_RED)
+box(1100, 792, 260, 214, "Measured (GPT Latest)", ["Samples: 86/86 over two runs", "Unseen detection types: 30/30", "Confidence ≥ 90: 110/110 right", "~1,100 in / 55 out tokens each", "",
+                                      "Live tests: CDR rules from real", "detections, results checked in AWS"], stripe=DARK_RED)
 
 svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
        f'font-family="Inter, system-ui, -apple-system, Helvetica, Arial, sans-serif">'
